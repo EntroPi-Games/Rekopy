@@ -1,6 +1,7 @@
 using System;
 using Eto.Forms;
 using Eto.Drawing;
+using System.IO;
 
 namespace Rekopy
 {
@@ -50,7 +51,10 @@ namespace Rekopy
 
 		private void ShowOpenFileDialog()
 		{
-			OpenFileDialog openFileDialog = new OpenFileDialog();
+			OpenFileDialog openFileDialog = new OpenFileDialog
+			{
+				CheckFileExists = true
+			};
 
 			FileFilter xmlFileFilter = new FileFilter("XML", new string[] { ".xml" });
 			openFileDialog.Filters.Add(xmlFileFilter);
@@ -63,8 +67,12 @@ namespace Rekopy
 
 		private void OpenRekordboxCollectionFile(string filePath)
 		{
-			StackLayout content = Content as StackLayout;
-			content.Items.Add(filePath);
+			FileInfo fileInfo = new FileInfo(filePath);
+			if (RekordboxXmlReader.IsFileRekordboxCollection(fileInfo) == true)
+			{
+				var content = Content as StackLayout;
+				content.Items.Add(filePath);
+			}
 		}
 	}
 }
