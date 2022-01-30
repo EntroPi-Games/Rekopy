@@ -7,15 +7,33 @@ namespace Rekopy
 {
 	public partial class MainForm : Form
 	{
+		private TreeGridView m_TreeGridView;
+		private RekordboxXmlDocument m_RekordboxXmlDocument;
+
 		public MainForm()
 		{
 			Title = "Rekopy";
 			MinimumSize = new Size(1024, 512);
 
-			Content = new StackLayout
+			m_TreeGridView = new TreeGridView();
+
+			m_TreeGridView.Columns.Add(new GridColumn
 			{
-				Padding = 10
-			};
+				DataCell = new TextBoxCell(0),
+				AutoSize = true,
+				MinWidth = 256
+			});
+
+			m_TreeGridView.Columns.Add(new GridColumn
+			{
+				HeaderText = "Export",
+				DataCell = new CheckBoxCell(1),
+				Editable = false,
+				MinWidth = 48,
+				MaxWidth = 48
+			});
+
+			Content = m_TreeGridView;
 
 			var openCollectionCommand = new Command { MenuText = "Open Rekordbox XML collection" };
 			openCollectionCommand.Executed += (sender, e) => ShowOpenFileDialog();
@@ -68,10 +86,9 @@ namespace Rekopy
 		private void OpenRekordboxCollectionFile(string filePath)
 		{
 			FileInfo fileInfo = new FileInfo(filePath);
-			if (RekordboxXmlReader.IsFileRekordboxCollection(fileInfo) == true)
+			if (RekordboxXmlDocument.IsFileRekordboxCollection(fileInfo) == true)
 			{
-				var content = Content as StackLayout;
-				content.Items.Add(filePath);
+				m_RekordboxXmlDocument = new RekordboxXmlDocument(fileInfo, m_TreeGridView);
 			}
 		}
 	}
