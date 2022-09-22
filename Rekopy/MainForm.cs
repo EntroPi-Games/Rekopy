@@ -33,9 +33,11 @@ namespace Rekopy
 				MaxWidth = 48
 			});
 
+			m_TreeGridView.CellClick += OnCellClicked;
+			m_TreeGridView.CellDoubleClick += OnCellDoubleClicked;
 			Content = m_TreeGridView;
 
-			var openCollectionCommand = new Command { MenuText = "Open Rekordbox XML collection" };
+			var openCollectionCommand = new Command { MenuText = "Open Rekordbox XML collection", ToolBarText = "Open Collection" };
 			openCollectionCommand.Executed += (sender, e) => ShowOpenFileDialog();
 
 			var quitCommand = new Command { MenuText = "Quit", Shortcut = Application.Instance.CommonModifier | Keys.Q };
@@ -64,7 +66,29 @@ namespace Rekopy
 			};
 
 			// create toolbar			
-			//ToolBar = new ToolBar { Items = { clickMe } };
+			ToolBar = new ToolBar { Items = { openCollectionCommand } };
+		}
+
+		private void OnCellClicked(object sender, GridCellMouseEventArgs eventArgs)
+		{
+			if (eventArgs.GridColumn != null && eventArgs.GridColumn.DataCell is CheckBoxCell)
+			{
+				TreeGridItem item = eventArgs.Item as TreeGridItem;
+				bool value = (bool)item.Values[1];
+				item.Values[1] = !value;
+
+				m_TreeGridView.ReloadData();
+			}
+		}
+
+		private void OnCellDoubleClicked(object sender, GridCellMouseEventArgs eventArgs)
+		{
+			if (eventArgs.GridColumn != null && eventArgs.GridColumn.DataCell is TextBoxCell)
+			{
+				TreeGridItem item = eventArgs.Item as TreeGridItem;
+				item.Expanded = !item.Expanded;
+				m_TreeGridView.ReloadData();
+			}
 		}
 
 		private void ShowOpenFileDialog()
