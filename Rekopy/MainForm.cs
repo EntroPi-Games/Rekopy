@@ -2,12 +2,13 @@ using System;
 using Eto.Forms;
 using Eto.Drawing;
 using System.IO;
+using System.Linq;
 
 namespace Rekopy
 {
 	public partial class MainForm : Form
 	{
-		private TreeGridView m_TreeGridView;
+		private readonly TreeGridView m_TreeGridView;
 		private RekordboxXmlDocument m_RekordboxXmlDocument;
 
 		public MainForm()
@@ -74,11 +75,42 @@ namespace Rekopy
 			if (eventArgs.GridColumn != null && eventArgs.GridColumn.DataCell is CheckBoxCell)
 			{
 				TreeGridItem item = eventArgs.Item as TreeGridItem;
-				bool value = (bool)item.Values[1];
-				item.Values[1] = !value;
+				bool originalValue = (bool)item.Values[1];
+				bool value = !originalValue;
+
+				SetItemAndChildrenValuesRecursively(item, value);
+
+				if (value == false)
+				{
+					SetParentValuesRecursively(item, value);
+				}
 
 				m_TreeGridView.ReloadData();
 			}
+		}
+
+		private static void SetItemAndChildrenValuesRecursively(TreeGridItem item, bool value)
+		{
+			SetItemValue(item, value);
+
+			foreach (TreeGridItem child in item.Children.Cast<TreeGridItem>())
+			{
+				SetItemAndChildrenValuesRecursively(child, value);
+			}
+		}
+
+		private static void SetParentValuesRecursively(TreeGridItem item, bool value)
+		{
+			if (item.Parent != null && item.Parent is TreeGridItem parentItem)
+			{
+				SetItemValue(parentItem, value);
+				SetParentValuesRecursively(parentItem, value);
+			}
+		}
+
+		private static void SetItemValue(TreeGridItem item, bool value)
+		{
+			item.Values[1] = value;
 		}
 
 		private void OnCellDoubleClicked(object sender, GridCellMouseEventArgs eventArgs)
