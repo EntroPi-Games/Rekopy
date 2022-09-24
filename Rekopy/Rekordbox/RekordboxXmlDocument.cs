@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Xml;
 using Eto.Forms;
@@ -7,34 +9,54 @@ namespace Rekopy
 {
 	public class RekordboxXmlDocument
 	{
-		private const string PlaylistRootNodePath = "PLAYLISTS/NODE";
-
 		private readonly XmlDocument m_XmlDocument;
-
-		private XmlNode PlaylistRootNode => m_XmlDocument.DocumentElement.SelectSingleNode(PlaylistRootNodePath);
+		private readonly XmlNode m_CollectionRootNode;
+		private readonly XmlNode m_PlaylistRootNode;
+		private readonly Dictionary<int, XmlNode> m_TrackNodes = new();
 
 		public RekordboxXmlDocument(FileInfo xmlFileInfo, TreeGridView treeGridView)
 		{
+			Stopwatch stopwatch = new();
+			stopwatch.Start();
+
 			m_XmlDocument = new();
 			m_XmlDocument.Load(xmlFileInfo.FullName);
 
-			TreeGridItemCollection itemCollection = new TreeGridItemCollection();
+			const string collectionRootNodePath = "COLLECTION";
+			m_CollectionRootNode = m_XmlDocument.DocumentElement.SelectSingleNode(collectionRootNodePath);
+
+			XmlNodeList trackNodes = m_CollectionRootNode.SelectNodes("TRACK");
+			foreach (XmlNode trackNode in trackNodes)
+			{
+				if (Int32.TryParse(trackNode.Attributes["TrackID"].Value, out int trackId))
+				{
+					m_TrackNodes.Add(trackId, trackNode);
+				}
+			}
+
+			const string playlistRootNodePath = "PLAYLISTS/NODE";
+			m_PlaylistRootNode = m_XmlDocument.DocumentElement.SelectSingleNode(playlistRootNodePath);
+
+			TreeGridItemCollection itemCollection = new();
 
 			TreeGridItem playlistRootItem = new("Playlists", false);
 			itemCollection.Add(playlistRootItem);
 
-			XmlNodeList playlistNodeList = PlaylistRootNode.SelectNodes("NODE");
+			XmlNodeList playlistNodeList = m_PlaylistRootNode.SelectNodes("NODE");
 			foreach (XmlNode node in playlistNodeList)
 			{
 				AddNodeAndChildrenToTreeItem(node, playlistRootItem);
 			}
 
 			treeGridView.DataStore = itemCollection;
+
+			stopwatch.Stop();
+			Console.WriteLine($"Loading rekordbox playlist took {stopwatch.Elapsed} seconds");
 		}
 
 		private bool TryGetPlaylistNode(IReadOnlyCollection<string> playlistNames, out XmlNode playlistNode)
 		{
-			playlistNode = PlaylistRootNode;
+			playlistNode = m_PlaylistRootNode;
 			bool succeeded = true;
 
 			foreach (string playlistName in playlistNames)
