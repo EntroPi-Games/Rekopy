@@ -7,21 +7,24 @@ namespace Rekopy
 {
 	public class RekordboxXmlDocument
 	{
+		private const string PlaylistRootNodePath = "PLAYLISTS/NODE";
+
 		private readonly XmlDocument m_XmlDocument;
+
+		private XmlNode PlaylistRootNode => m_XmlDocument.DocumentElement.SelectSingleNode(PlaylistRootNodePath);
 
 		public RekordboxXmlDocument(FileInfo xmlFileInfo, TreeGridView treeGridView)
 		{
-			m_XmlDocument = new XmlDocument();
+			m_XmlDocument = new();
 			m_XmlDocument.Load(xmlFileInfo.FullName);
-
-			XmlNode rootNode = m_XmlDocument.DocumentElement;
-			XmlNodeList nodeList = rootNode.SelectNodes("PLAYLISTS/NODE/NODE");
 
 			TreeGridItemCollection itemCollection = new TreeGridItemCollection();
 
-			TreeGridItem playlistRootItem = new TreeGridItem("Playlists", false);
+			TreeGridItem playlistRootItem = new("Playlists", false);
 			itemCollection.Add(playlistRootItem);
-			foreach (XmlNode node in nodeList)
+
+			XmlNodeList playlistNodeList = PlaylistRootNode.SelectNodes("NODE");
+			foreach (XmlNode node in playlistNodeList)
 			{
 				AddNodeAndChildrenToTreeItem(node, playlistRootItem);
 			}
@@ -29,9 +32,26 @@ namespace Rekopy
 			treeGridView.DataStore = itemCollection;
 		}
 
+		private bool TryGetPlaylistNode(IReadOnlyCollection<string> playlistNames, out XmlNode playlistNode)
+		{
+			playlistNode = PlaylistRootNode;
+			bool succeeded = true;
+
+			foreach (string playlistName in playlistNames)
+			{
+				playlistNode = playlistNode.SelectSingleNode($"NODE[@Name='{playlistName}']");
+				if (playlistNode == null)
+				{
+					succeeded = false;
+					break;
+				}
+			}
+
+			return succeeded;
+		}
 		private void AddNodeAndChildrenToTreeItem(XmlNode node, TreeGridItem parentItem)
 		{
-			TreeGridItem item = new TreeGridItem(node.Attributes["Name"].Value, false);
+			TreeGridItem item = new(node.Attributes["Name"].Value, false);
 			parentItem.Children.Add(item);
 
 			if (node.HasChildNodes == true)
