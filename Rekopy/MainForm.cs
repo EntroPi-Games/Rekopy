@@ -149,9 +149,10 @@ namespace Rekopy
 			{
 				m_RekordboxXmlDocument = new RekordboxXmlDocument(fileInfo);
 
-				TreeGridItemCollection itemCollection = new();
-
 				TreeGridItem playlistRootItem = new("Playlists", false);
+				playlistRootItem.SetValue(PlaylistDataColumnIndex, m_RekordboxXmlDocument.RootPlaylist);
+
+				TreeGridItemCollection itemCollection = new();
 				itemCollection.Add(playlistRootItem);
 
 				foreach (IPlaylist playlist in m_RekordboxXmlDocument.RootPlaylist.Children)
