@@ -1,4 +1,3 @@
-using System;
 using Eto.Forms;
 using Eto.Drawing;
 using System.IO;
@@ -8,6 +7,10 @@ namespace Rekopy
 {
 	public partial class MainForm : Form
 	{
+		private const int NameColumnIndex = 0;
+		private const int ExportColumnIndex = 1;
+		private const int PlaylistDataColumnIndex = 2;
+
 		private readonly TreeGridView m_TreeGridView;
 		private RekordboxXmlDocument m_RekordboxXmlDocument;
 
@@ -20,7 +23,7 @@ namespace Rekopy
 
 			m_TreeGridView.Columns.Add(new GridColumn
 			{
-				DataCell = new TextBoxCell(0),
+				DataCell = new TextBoxCell(NameColumnIndex),
 				AutoSize = true,
 				MinWidth = 256
 			});
@@ -28,7 +31,7 @@ namespace Rekopy
 			m_TreeGridView.Columns.Add(new GridColumn
 			{
 				HeaderText = "Export",
-				DataCell = new CheckBoxCell(1),
+				DataCell = new CheckBoxCell(ExportColumnIndex),
 				Editable = false,
 				MinWidth = 48,
 				MaxWidth = 48
@@ -144,7 +147,32 @@ namespace Rekopy
 			FileInfo fileInfo = new FileInfo(filePath);
 			if (RekordboxXmlDocument.IsFileRekordboxCollection(fileInfo) == true)
 			{
-				m_RekordboxXmlDocument = new RekordboxXmlDocument(fileInfo, m_TreeGridView);
+				m_RekordboxXmlDocument = new RekordboxXmlDocument(fileInfo);
+
+				TreeGridItemCollection itemCollection = new();
+
+				TreeGridItem playlistRootItem = new("Playlists", false);
+				itemCollection.Add(playlistRootItem);
+
+				foreach (IPlaylist playlist in m_RekordboxXmlDocument.RootPlaylist.Children)
+				{
+					AddPlaylistAndChildrenToTreeItem(playlist, playlistRootItem);
+				}
+
+				m_TreeGridView.DataStore = itemCollection;
+			}
+		}
+
+		private static void AddPlaylistAndChildrenToTreeItem(IPlaylist playlist, TreeGridItem parentItem)
+		{
+			TreeGridItem item = new(playlist.Name, false);
+			item.SetValue(PlaylistDataColumnIndex, playlist);
+
+			parentItem.Children.Add(item);
+
+			foreach (IPlaylist nestedPlaylist in playlist.Children)
+			{
+				AddPlaylistAndChildrenToTreeItem(nestedPlaylist, item);
 			}
 		}
 	}

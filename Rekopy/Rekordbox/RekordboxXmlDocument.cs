@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Xml;
 using Eto.Forms;
@@ -12,13 +11,14 @@ namespace Rekopy
 		private readonly XmlDocument m_XmlDocument;
 		private readonly XmlNode m_CollectionRootNode;
 		private readonly XmlNode m_PlaylistRootNode;
+
+		private readonly RekordboxPlaylist m_RootPlaylist;
 		private readonly Dictionary<int, XmlNode> m_TrackNodes = new();
 
-		public RekordboxXmlDocument(FileInfo xmlFileInfo, TreeGridView treeGridView)
-		{
-			Stopwatch stopwatch = new();
-			stopwatch.Start();
+		public IPlaylist RootPlaylist => m_RootPlaylist;
 
+		public RekordboxXmlDocument(FileInfo xmlFileInfo)
+		{
 			m_XmlDocument = new();
 			m_XmlDocument.Load(xmlFileInfo.FullName);
 
@@ -37,51 +37,26 @@ namespace Rekopy
 			const string playlistRootNodePath = "PLAYLISTS/NODE";
 			m_PlaylistRootNode = m_XmlDocument.DocumentElement.SelectSingleNode(playlistRootNodePath);
 
-			TreeGridItemCollection itemCollection = new();
-
-			TreeGridItem playlistRootItem = new("Playlists", false);
-			itemCollection.Add(playlistRootItem);
+			m_RootPlaylist = new RekordboxPlaylist(null, m_PlaylistRootNode);
 
 			XmlNodeList playlistNodeList = m_PlaylistRootNode.SelectNodes("NODE");
 			foreach (XmlNode node in playlistNodeList)
 			{
-				AddNodeAndChildrenToTreeItem(node, playlistRootItem);
+				AddChildrenToPlaylist(node, m_RootPlaylist);
 			}
-
-			treeGridView.DataStore = itemCollection;
-
-			stopwatch.Stop();
-			Console.WriteLine($"Loading rekordbox playlist took {stopwatch.Elapsed} seconds");
 		}
 
-		private bool TryGetPlaylistNode(IReadOnlyCollection<string> playlistNames, out XmlNode playlistNode)
+		private void AddChildrenToPlaylist(XmlNode node, RekordboxPlaylist parent)
 		{
-			playlistNode = m_PlaylistRootNode;
-			bool succeeded = true;
-
-			foreach (string playlistName in playlistNames)
-			{
-				playlistNode = playlistNode.SelectSingleNode($"NODE[@Name='{playlistName}']");
-				if (playlistNode == null)
-				{
-					succeeded = false;
-					break;
-				}
-			}
-
-			return succeeded;
-		}
-		private void AddNodeAndChildrenToTreeItem(XmlNode node, TreeGridItem parentItem)
-		{
-			TreeGridItem item = new(node.Attributes["Name"].Value, false);
-			parentItem.Children.Add(item);
+			RekordboxPlaylist playlist = new(parent, node);
+			parent.AddChild(playlist);
 
 			if (node.HasChildNodes == true)
 			{
 				XmlNodeList childNodeList = node.SelectNodes("NODE");
 				foreach (XmlNode childNode in childNodeList)
 				{
-					AddNodeAndChildrenToTreeItem(childNode, item);
+					AddChildrenToPlaylist(childNode, playlist);
 				}
 			}
 		}
