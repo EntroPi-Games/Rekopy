@@ -2,6 +2,8 @@ using Eto.Forms;
 using Eto.Drawing;
 using System.IO;
 using System.Linq;
+using System;
+using System.Xml;
 
 namespace Rekopy
 {
@@ -41,8 +43,11 @@ namespace Rekopy
 			m_TreeGridView.CellDoubleClick += OnCellDoubleClicked;
 			Content = m_TreeGridView;
 
-			var openCollectionCommand = new Command { MenuText = "Open Rekordbox XML collection", ToolBarText = "Open Collection" };
+			Command openCollectionCommand = new() { MenuText = "Open Rekordbox XML collection", ToolBarText = "Open Collection" };
 			openCollectionCommand.Executed += (sender, e) => ShowOpenFileDialog();
+
+			Command exportPlaylistsCommand = new() { MenuText = "Export Selected playlist to new collection", ToolBarText = "Export Selected Playlists" };
+			exportPlaylistsCommand.Executed += (sender, e) => ExportSelectedPlaylists();
 
 			var quitCommand = new Command { MenuText = "Quit", Shortcut = Application.Instance.CommonModifier | Keys.Q };
 			quitCommand.Executed += (sender, e) => Application.Instance.Quit();
@@ -56,7 +61,7 @@ namespace Rekopy
 				Items =
 				{
 					// File submenu
-					new SubMenuItem { Text = "&File", Items = { openCollectionCommand } },
+					new SubMenuItem { Text = "&File", Items = { openCollectionCommand, exportPlaylistsCommand } },
 					// new SubMenuItem { Text = "&Edit", Items = { /* commands/items */ } },
 					// new SubMenuItem { Text = "&View", Items = { /* commands/items */ } },
 				},
@@ -70,7 +75,7 @@ namespace Rekopy
 			};
 
 			// create toolbar			
-			ToolBar = new ToolBar { Items = { openCollectionCommand } };
+			ToolBar = new ToolBar { Items = { openCollectionCommand, exportPlaylistsCommand } };
 		}
 
 		private void OnCellClicked(object sender, GridCellMouseEventArgs eventArgs)
@@ -128,12 +133,12 @@ namespace Rekopy
 
 		private void ShowOpenFileDialog()
 		{
-			OpenFileDialog openFileDialog = new OpenFileDialog
+			OpenFileDialog openFileDialog = new()
 			{
 				CheckFileExists = true
 			};
 
-			FileFilter xmlFileFilter = new FileFilter("XML", new string[] { ".xml" });
+			FileFilter xmlFileFilter = new("XML", new string[] { ".xml" });
 			openFileDialog.Filters.Add(xmlFileFilter);
 
 			if (openFileDialog.ShowDialog(this) == DialogResult.Ok)
@@ -144,7 +149,7 @@ namespace Rekopy
 
 		private void OpenRekordboxCollectionFile(string filePath)
 		{
-			FileInfo fileInfo = new FileInfo(filePath);
+			FileInfo fileInfo = new(filePath);
 			if (RekordboxXmlDocument.IsFileRekordboxCollection(fileInfo) == true)
 			{
 				m_RekordboxXmlDocument = new RekordboxXmlDocument(fileInfo);
@@ -175,6 +180,86 @@ namespace Rekopy
 			{
 				AddPlaylistAndChildrenToTreeItem(nestedPlaylist, item);
 			}
+		}
+
+		private void ExportSelectedPlaylists()
+		{
+			TreeGridItemCollection itemCollection = (TreeGridItemCollection)m_TreeGridView.DataStore;
+			if (itemCollection != null && itemCollection.Count > 0)
+			{
+				TreeGridItem rootPlaylistItem = (TreeGridItem)itemCollection[0];
+				if (ShouldItemPlaylistBeExported(rootPlaylistItem))
+				{
+					SaveFileDialog saveFileDialog = new();
+
+					FileFilter xmlFileFilter = new("XML", new string[] { ".xml" });
+					saveFileDialog.Filters.Add(xmlFileFilter);
+
+					if (saveFileDialog.ShowDialog(this) == DialogResult.Ok)
+					{
+						RekordboxCollectionWriter writer = new(m_RekordboxXmlDocument);
+
+						ExportPlaylistItem(writer, null, rootPlaylistItem);
+
+						writer.WriteToFile(saveFileDialog.FileName);
+					}
+				}
+				else
+				{
+					MessageBox.Show("No playlists selected for export.", "Nothing selected", MessageBoxType.Information);
+				}
+			}
+			else
+			{
+				MessageBox.Show("Please open a rekordbox collection before exporting.", "Can't export", MessageBoxType.Information);
+			}
+		}
+
+		private static bool ShouldItemPlaylistBeExported(TreeGridItem item)
+		{
+			bool shouldExport = false;
+
+			if (item.GetValue(PlaylistDataColumnIndex) is IPlaylist playlist)
+			{
+				if (playlist.PlaylistType == PlaylistType.Playlist)
+				{
+					shouldExport = GetExportValue(item);
+				}
+				else if (playlist.PlaylistType == PlaylistType.Folder)
+				{
+					foreach (TreeGridItem childItem in item.Children.Cast<TreeGridItem>())
+					{
+						if (ShouldItemPlaylistBeExported(childItem))
+						{
+							shouldExport = true;
+							break;
+						}
+					}
+				}
+			}
+
+			return shouldExport;
+		}
+
+		private static void ExportPlaylistItem(RekordboxCollectionWriter writer, XmlNode parent, TreeGridItem item)
+		{
+			if (item.GetValue(PlaylistDataColumnIndex) is IPlaylist playlist)
+			{
+				XmlNode playlistNode = writer.AddPlaylist(playlist, parent);
+
+				foreach (TreeGridItem childItem in item.Children.Cast<TreeGridItem>())
+				{
+					if (ShouldItemPlaylistBeExported(childItem))
+					{
+						ExportPlaylistItem(writer, playlistNode, childItem);
+					}
+				}
+			}
+		}
+
+		private static bool GetExportValue(TreeGridItem item)
+		{
+			return (bool)item.GetValue(ExportColumnIndex);
 		}
 	}
 }

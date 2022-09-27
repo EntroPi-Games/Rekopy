@@ -8,22 +8,22 @@ namespace Rekopy
 {
 	public class RekordboxXmlDocument
 	{
-		private readonly XmlDocument m_XmlDocument;
 		private readonly XmlNode m_CollectionRootNode;
 		private readonly XmlNode m_PlaylistRootNode;
 
 		private readonly RekordboxPlaylist m_RootPlaylist;
 		private readonly Dictionary<int, XmlNode> m_TrackNodes = new();
 
+		public XmlDocument XmlDocument { get; }
 		public IPlaylist RootPlaylist => m_RootPlaylist;
 
 		public RekordboxXmlDocument(FileInfo xmlFileInfo)
 		{
-			m_XmlDocument = new();
-			m_XmlDocument.Load(xmlFileInfo.FullName);
+			XmlDocument = new();
+			XmlDocument.Load(xmlFileInfo.FullName);
 
 			const string collectionRootNodePath = "COLLECTION";
-			m_CollectionRootNode = m_XmlDocument.DocumentElement.SelectSingleNode(collectionRootNodePath);
+			m_CollectionRootNode = XmlDocument.DocumentElement.SelectSingleNode(collectionRootNodePath);
 
 			XmlNodeList trackNodes = m_CollectionRootNode.SelectNodes("TRACK");
 			foreach (XmlNode trackNode in trackNodes)
@@ -35,7 +35,7 @@ namespace Rekopy
 			}
 
 			const string playlistRootNodePath = "PLAYLISTS/NODE";
-			m_PlaylistRootNode = m_XmlDocument.DocumentElement.SelectSingleNode(playlistRootNodePath);
+			m_PlaylistRootNode = XmlDocument.DocumentElement.SelectSingleNode(playlistRootNodePath);
 
 			m_RootPlaylist = new RekordboxPlaylist(null, m_PlaylistRootNode);
 

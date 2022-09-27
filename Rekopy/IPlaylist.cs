@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Xml;
 
 namespace Rekopy
 {
@@ -9,6 +10,7 @@ namespace Rekopy
 		public string Name { get; }
 		public IPlaylist Parent { get; }
 		public PlaylistType PlaylistType { get; }
+		public XmlNode Node { get; }
 		public IReadOnlyCollection<IPlaylist> Children { get; }
 		public IReadOnlyCollection<int> TrackIds { get; }
 	}
