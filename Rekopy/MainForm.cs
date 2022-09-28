@@ -2,8 +2,6 @@ using Eto.Forms;
 using Eto.Drawing;
 using System.IO;
 using System.Linq;
-using System;
-using System.Xml;
 
 namespace Rekopy
 {
@@ -83,42 +81,34 @@ namespace Rekopy
 			if (eventArgs.GridColumn != null && eventArgs.GridColumn.DataCell is CheckBoxCell)
 			{
 				TreeGridItem item = eventArgs.Item as TreeGridItem;
-				bool originalValue = (bool)item.Values[1];
-				bool value = !originalValue;
+				IPlaylist playlist = (IPlaylist)item.GetValue(PlaylistDataColumnIndex);
 
-				SetItemAndChildrenValuesRecursively(item, value);
+				playlist.SetIsSelected(!playlist.IsSelected);
 
-				if (value == false)
-				{
-					SetParentValuesRecursively(item, value);
-				}
-
-				m_TreeGridView.ReloadData();
+				UpdateView();
 			}
 		}
 
-		private static void SetItemAndChildrenValuesRecursively(TreeGridItem item, bool value)
+		private void UpdateView()
 		{
-			SetItemValue(item, value);
+			TreeGridItemCollection itemCollection = (TreeGridItemCollection)m_TreeGridView.DataStore;
+			foreach (TreeGridItem item in itemCollection.Cast<TreeGridItem>())
+			{
+				UpdateTreeGridItemRecursively(item);
+			}
+
+			m_TreeGridView.ReloadData();
+		}
+
+		private static void UpdateTreeGridItemRecursively(TreeGridItem item)
+		{
+			IPlaylist playlist = (IPlaylist)item.GetValue(PlaylistDataColumnIndex);
+			item.SetValue(ExportColumnIndex, playlist.IsSelected);
 
 			foreach (TreeGridItem child in item.Children.Cast<TreeGridItem>())
 			{
-				SetItemAndChildrenValuesRecursively(child, value);
+				UpdateTreeGridItemRecursively(child);
 			}
-		}
-
-		private static void SetParentValuesRecursively(TreeGridItem item, bool value)
-		{
-			if (item.Parent != null && item.Parent is TreeGridItem parentItem)
-			{
-				SetItemValue(parentItem, value);
-				SetParentValuesRecursively(parentItem, value);
-			}
-		}
-
-		private static void SetItemValue(TreeGridItem item, bool value)
-		{
-			item.Values[1] = value;
 		}
 
 		private void OnCellDoubleClicked(object sender, GridCellMouseEventArgs eventArgs)
@@ -188,7 +178,8 @@ namespace Rekopy
 			if (itemCollection != null && itemCollection.Count > 0)
 			{
 				TreeGridItem rootPlaylistItem = (TreeGridItem)itemCollection[0];
-				if (ShouldItemPlaylistBeExported(rootPlaylistItem))
+				IPlaylist rootPlaylist = (IPlaylist)rootPlaylistItem.GetValue(PlaylistDataColumnIndex);
+				if (rootPlaylist.IncludeInExport())
 				{
 					SaveFileDialog saveFileDialog = new();
 
@@ -197,9 +188,7 @@ namespace Rekopy
 
 					if (saveFileDialog.ShowDialog(this) == DialogResult.Ok)
 					{
-						RekordboxCollectionWriter writer = new(m_RekordboxXmlDocument);
-
-						ExportPlaylistItem(writer, null, rootPlaylistItem);
+						RekordboxCollectionWriter writer = new(m_RekordboxXmlDocument, rootPlaylist);
 
 						writer.WriteToFile(saveFileDialog.FileName);
 					}
@@ -213,53 +202,6 @@ namespace Rekopy
 			{
 				MessageBox.Show("Please open a rekordbox collection before exporting.", "Can't export", MessageBoxType.Information);
 			}
-		}
-
-		private static bool ShouldItemPlaylistBeExported(TreeGridItem item)
-		{
-			bool shouldExport = false;
-
-			if (item.GetValue(PlaylistDataColumnIndex) is IPlaylist playlist)
-			{
-				if (playlist.PlaylistType == PlaylistType.Playlist)
-				{
-					shouldExport = GetExportValue(item);
-				}
-				else if (playlist.PlaylistType == PlaylistType.Folder)
-				{
-					foreach (TreeGridItem childItem in item.Children.Cast<TreeGridItem>())
-					{
-						if (ShouldItemPlaylistBeExported(childItem))
-						{
-							shouldExport = true;
-							break;
-						}
-					}
-				}
-			}
-
-			return shouldExport;
-		}
-
-		private static void ExportPlaylistItem(RekordboxCollectionWriter writer, XmlNode parent, TreeGridItem item)
-		{
-			if (item.GetValue(PlaylistDataColumnIndex) is IPlaylist playlist)
-			{
-				XmlNode playlistNode = writer.AddPlaylist(playlist, parent);
-
-				foreach (TreeGridItem childItem in item.Children.Cast<TreeGridItem>())
-				{
-					if (ShouldItemPlaylistBeExported(childItem))
-					{
-						ExportPlaylistItem(writer, playlistNode, childItem);
-					}
-				}
-			}
-		}
-
-		private static bool GetExportValue(TreeGridItem item)
-		{
-			return (bool)item.GetValue(ExportColumnIndex);
 		}
 	}
 }

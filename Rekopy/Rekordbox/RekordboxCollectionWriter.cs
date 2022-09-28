@@ -7,7 +7,7 @@ namespace Rekopy
 		private readonly XmlDocument m_XmlDocument;
 		private readonly XmlNode m_PlaylistRootNode;
 
-		public RekordboxCollectionWriter(RekordboxXmlDocument rekordboxCollectionReader)
+		public RekordboxCollectionWriter(RekordboxXmlDocument rekordboxCollectionReader, IPlaylist rootPlaylist)
 		{
 			m_XmlDocument = new XmlDocument();
 
@@ -26,27 +26,35 @@ namespace Rekopy
 			}
 
 			m_PlaylistRootNode = djPlaylistsNode.SelectSingleNode("PLAYLISTS");
-		}
 
-		public XmlNode AddPlaylist(IPlaylist playlist, XmlNode parent)
-		{
-			XmlNode importedPlaylistNode = m_XmlDocument.ImportNode(playlist.Node, playlist.PlaylistType == PlaylistType.Playlist);
-
-			if (parent != null)
-			{
-				parent.AppendChild(importedPlaylistNode);
-			}
-			else
-			{
-				m_PlaylistRootNode.AppendChild(importedPlaylistNode);
-			}
-
-			return importedPlaylistNode;
+			AddPlaylist(rootPlaylist, m_PlaylistRootNode);
 		}
 
 		public void WriteToFile(string filename)
 		{
 			m_XmlDocument.Save(filename);
+		}
+
+		private void AddPlaylist(IPlaylist playlist, XmlNode parentNode)
+		{
+			XmlNode importedPlaylistNode = m_XmlDocument.ImportNode(playlist.Node, playlist.PlaylistType == PlaylistType.Playlist);
+			parentNode.AppendChild(importedPlaylistNode);
+
+			int includedChildCount = 0;
+
+			foreach (IPlaylist child in playlist.Children)
+			{
+				if (child.IncludeInExport())
+				{
+					AddPlaylist(child, importedPlaylistNode);
+					++includedChildCount;
+				}
+			}
+
+			if (playlist.PlaylistType == PlaylistType.Folder)
+			{
+				importedPlaylistNode.Attributes["Count"].Value = includedChildCount.ToString();
+			}
 		}
 	}
 }

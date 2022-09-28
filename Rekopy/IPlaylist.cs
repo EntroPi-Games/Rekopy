@@ -13,5 +13,9 @@ namespace Rekopy
 		public XmlNode Node { get; }
 		public IReadOnlyCollection<IPlaylist> Children { get; }
 		public IReadOnlyCollection<int> TrackIds { get; }
+		public bool IsSelected { get; }
+
+		public void SetIsSelected(bool isSelected, bool includeChildren = true);
+		public bool IncludeInExport();
 	}
 }
