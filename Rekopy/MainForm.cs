@@ -14,9 +14,9 @@ namespace Rekopy
 			MinimumSize = new Size(1024, 512);
 
 			Command openCollectionCommand = new() { MenuText = "Open Rekordbox XML collection", ToolBarText = "Open Collection" };
-			openCollectionCommand.Executed += (sender, e) => ShowOpenFileDialog();
+			openCollectionCommand.Executed += (sender, e) => OpenRekordboxCollection();
 
-			Command exportPlaylistsCommand = new() { MenuText = "Export Selected playlist to new collection", ToolBarText = "Export Selected Playlists" };
+			Command exportPlaylistsCommand = new() { MenuText = "Export selected playlists", ToolBarText = "Export Selected" };
 			exportPlaylistsCommand.Executed += (sender, e) => ExportSelectedPlaylists();
 
 			var quitCommand = new Command { MenuText = "Quit", Shortcut = Application.Instance.CommonModifier | Keys.Q };
@@ -30,10 +30,7 @@ namespace Rekopy
 			{
 				Items =
 				{
-					// File submenu
-					new SubMenuItem { Text = "&File", Items = { openCollectionCommand, exportPlaylistsCommand } },
-					// new SubMenuItem { Text = "&Edit", Items = { /* commands/items */ } },
-					// new SubMenuItem { Text = "&View", Items = { /* commands/items */ } },
+					new SubMenuItem { Text = "&File", Items = { openCollectionCommand, exportPlaylistsCommand } }
 				},
 				ApplicationItems =
 				{
@@ -44,11 +41,10 @@ namespace Rekopy
 				AboutItem = aboutCommand
 			};
 
-			// create toolbar			
 			ToolBar = new ToolBar { Items = { openCollectionCommand, exportPlaylistsCommand } };
 		}
 
-		private void ShowOpenFileDialog()
+		private void OpenRekordboxCollection()
 		{
 			OpenFileDialog openFileDialog = new()
 			{
@@ -60,17 +56,12 @@ namespace Rekopy
 
 			if (openFileDialog.ShowDialog(this) == DialogResult.Ok)
 			{
-				OpenRekordboxCollectionFile(openFileDialog.FileName);
-			}
-		}
-
-		private void OpenRekordboxCollectionFile(string filePath)
-		{
-			FileInfo fileInfo = new(filePath);
-			if (RekordboxXmlDocument.IsFileRekordboxCollection(fileInfo) == true)
-			{
-				m_RekordboxXmlDocument = new RekordboxXmlDocument(fileInfo);
-				PlaylistView view = new(this, m_RekordboxXmlDocument.RootPlaylist);
+				FileInfo fileInfo = new(openFileDialog.FileName);
+				if (RekordboxXmlDocument.IsFileRekordboxCollection(fileInfo) == true)
+				{
+					m_RekordboxXmlDocument = new RekordboxXmlDocument(fileInfo);
+					PlaylistView view = new(this, m_RekordboxXmlDocument.RootPlaylist);
+				}
 			}
 		}
 
@@ -98,7 +89,7 @@ namespace Rekopy
 			}
 			else
 			{
-				MessageBox.Show("Please open a rekordbox collection before exporting.", "Can't export", MessageBoxType.Information);
+				MessageBox.Show("Please open a Rekordbox collection before exporting.", "No collection opened", MessageBoxType.Information);
 			}
 		}
 	}
