@@ -78,8 +78,7 @@ namespace Rekopy
 
 					if (saveFileDialog.ShowDialog(this) == DialogResult.Ok)
 					{
-						RekordboxCollectionWriter writer = new(m_RekordboxXmlDocument, m_RekordboxXmlDocument.RootPlaylist);
-						writer.WriteToFile(saveFileDialog.FileName);
+						RekordboxCollectionWriter.WriteToFile(saveFileDialog.FileName, m_RekordboxXmlDocument, m_RekordboxXmlDocument.RootPlaylist);
 					}
 				}
 				else
