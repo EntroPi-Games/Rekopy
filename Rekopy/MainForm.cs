@@ -6,7 +6,7 @@ namespace Rekopy
 {
 	public partial class MainForm : Form
 	{
-		private RekordboxXmlDocument m_RekordboxXmlDocument;
+		private RekordboxCollectionReader m_RekordboxCollectionReader;
 
 		public MainForm()
 		{
@@ -57,19 +57,19 @@ namespace Rekopy
 			if (openFileDialog.ShowDialog(this) == DialogResult.Ok)
 			{
 				FileInfo fileInfo = new(openFileDialog.FileName);
-				if (RekordboxXmlDocument.IsFileRekordboxCollection(fileInfo) == true)
+				if (RekordboxCollectionReader.IsFileRekordboxCollection(fileInfo) == true)
 				{
-					m_RekordboxXmlDocument = new RekordboxXmlDocument(fileInfo);
-					PlaylistView view = new(this, m_RekordboxXmlDocument.RootPlaylist);
+					m_RekordboxCollectionReader = new RekordboxCollectionReader(fileInfo);
+					PlaylistView view = new(this, m_RekordboxCollectionReader.RootPlaylist);
 				}
 			}
 		}
 
 		private void ExportSelectedPlaylists()
 		{
-			if (m_RekordboxXmlDocument != null && m_RekordboxXmlDocument.RootPlaylist != null)
+			if (m_RekordboxCollectionReader != null && m_RekordboxCollectionReader.RootPlaylist != null)
 			{
-				if (m_RekordboxXmlDocument.RootPlaylist.IncludeInExport())
+				if (m_RekordboxCollectionReader.RootPlaylist.IncludeInExport())
 				{
 					SaveFileDialog saveFileDialog = new();
 
@@ -78,7 +78,7 @@ namespace Rekopy
 
 					if (saveFileDialog.ShowDialog(this) == DialogResult.Ok)
 					{
-						RekordboxCollectionWriter.WriteToFile(saveFileDialog.FileName, m_RekordboxXmlDocument, m_RekordboxXmlDocument.RootPlaylist);
+						RekordboxCollectionWriter.WriteToFile(saveFileDialog.FileName, m_RekordboxCollectionReader, m_RekordboxCollectionReader.RootPlaylist);
 					}
 				}
 				else

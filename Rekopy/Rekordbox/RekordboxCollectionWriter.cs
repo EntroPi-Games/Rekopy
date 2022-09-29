@@ -4,7 +4,7 @@ namespace Rekopy
 {
 	public static class RekordboxCollectionWriter
 	{
-		public static void WriteToFile(string filePath, RekordboxXmlDocument rekordboxCollectionReader, IPlaylist rootPlaylist)
+		public static void WriteToFile(string filePath, RekordboxCollectionReader rekordboxCollectionReader, IPlaylist rootPlaylist)
 		{
 			XmlDocument xmlDocument = new();
 			XmlDocument readerDocument = rekordboxCollectionReader.XmlDocument;

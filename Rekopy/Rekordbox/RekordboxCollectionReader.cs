@@ -6,7 +6,7 @@ using Eto.Forms;
 
 namespace Rekopy
 {
-	public class RekordboxXmlDocument
+	public class RekordboxCollectionReader
 	{
 		private readonly XmlNode m_CollectionRootNode;
 		private readonly XmlNode m_PlaylistRootNode;
@@ -17,7 +17,7 @@ namespace Rekopy
 		public XmlDocument XmlDocument { get; }
 		public IPlaylist RootPlaylist => m_RootPlaylist;
 
-		public RekordboxXmlDocument(FileInfo xmlFileInfo)
+		public RekordboxCollectionReader(FileInfo xmlFileInfo)
 		{
 			XmlDocument = new();
 			XmlDocument.Load(xmlFileInfo.FullName);
