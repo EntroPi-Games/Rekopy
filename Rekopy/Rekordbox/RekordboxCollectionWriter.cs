@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 
 namespace Rekopy
@@ -22,13 +25,22 @@ namespace Rekopy
 			}
 
 			XmlNode playlistRootNode = djPlaylistsNode.SelectSingleNode("PLAYLISTS");
+			HashSet<int> trackIds = new();
 
-			ImportPlaylistXmlNode(xmlDocument, rootPlaylist, playlistRootNode);
+			ImportPlaylistXmlNode(xmlDocument, rootPlaylist, playlistRootNode, trackIds);
+
+			XmlNode collectionRootNode = djPlaylistsNode.SelectSingleNode("COLLECTION");
+
+			IEnumerable<int> sortedTrackIds = trackIds.OrderBy(id => id);
+			ImportTrackIdNodes(xmlDocument, rekordboxCollectionReader, collectionRootNode, sortedTrackIds);
+
+			int trackCount = trackIds.Count;
+			collectionRootNode.Attributes["Entries"].Value = trackCount.ToString();
 
 			xmlDocument.Save(filePath);
 		}
 
-		private static void ImportPlaylistXmlNode(XmlDocument xmlDocument, IPlaylist playlist, XmlNode parentNode)
+		private static void ImportPlaylistXmlNode(XmlDocument xmlDocument, IPlaylist playlist, XmlNode parentNode, HashSet<int> trackIds)
 		{
 			XmlNode importedPlaylistNode = xmlDocument.ImportNode(playlist.Node, playlist.PlaylistType == PlaylistType.Playlist);
 			parentNode.AppendChild(importedPlaylistNode);
@@ -39,14 +51,36 @@ namespace Rekopy
 			{
 				if (child.IncludeInExport())
 				{
-					ImportPlaylistXmlNode(xmlDocument, child, importedPlaylistNode);
+					ImportPlaylistXmlNode(xmlDocument, child, importedPlaylistNode, trackIds);
 					++includedChildCount;
 				}
 			}
 
-			if (playlist.PlaylistType == PlaylistType.Folder)
+			if (playlist.PlaylistType == PlaylistType.Playlist)
+			{
+				foreach (int trackId in playlist.TrackIds)
+				{
+					if (trackIds.Contains(trackId) == false)
+					{
+						trackIds.Add(trackId);
+					}
+				}
+			}
+			else if (playlist.PlaylistType == PlaylistType.Folder)
 			{
 				importedPlaylistNode.Attributes["Count"].Value = includedChildCount.ToString();
+			}
+		}
+
+		private static void ImportTrackIdNodes(XmlDocument xmlDocument, RekordboxCollectionReader rekordboxCollectionReader, XmlNode collectionRootNode, IEnumerable<int> trackIds)
+		{
+			foreach (int trackId in trackIds)
+			{
+				if (rekordboxCollectionReader.TrackNodes.TryGetValue(trackId, out XmlNode trackNode))
+				{
+					XmlNode importedTrackNode = xmlDocument.ImportNode(trackNode, true);
+					collectionRootNode.AppendChild(importedTrackNode);
+				}
 			}
 		}
 	}

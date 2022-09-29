@@ -15,6 +15,7 @@ namespace Rekopy
 		private readonly Dictionary<int, XmlNode> m_TrackNodes = new();
 
 		public XmlDocument XmlDocument { get; }
+		public IReadOnlyDictionary<int, XmlNode> TrackNodes => m_TrackNodes;
 		public IPlaylist RootPlaylist => m_RootPlaylist;
 
 		public RekordboxCollectionReader(FileInfo xmlFileInfo)
