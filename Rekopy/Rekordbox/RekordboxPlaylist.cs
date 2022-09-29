@@ -33,6 +33,18 @@ namespace Rekopy
 			{
 				PlaylistType = PlaylistType.None;
 			}
+
+			if (PlaylistType == PlaylistType.Playlist)
+			{
+				XmlNodeList trackNodeList = node.SelectNodes("TRACK");
+				foreach (XmlNode trackNode in trackNodeList)
+				{
+					if (Int32.TryParse(trackNode.Attributes["Key"].Value, out int trackId))
+					{
+						m_TrackIds.Add(trackId);
+					}
+				}
+			}
 		}
 
 		public void SetIsSelected(bool isSelected, bool includeChildren)
