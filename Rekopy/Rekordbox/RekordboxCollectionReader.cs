@@ -14,14 +14,17 @@ namespace Rekopy
 		private readonly RekordboxPlaylist m_RootPlaylist;
 		private readonly Dictionary<int, XmlNode> m_TrackNodes = new();
 
+		public string SourceFilePath { get; }
 		public XmlDocument XmlDocument { get; }
 		public IReadOnlyDictionary<int, XmlNode> TrackNodes => m_TrackNodes;
 		public IPlaylist RootPlaylist => m_RootPlaylist;
 
 		public RekordboxCollectionReader(FileInfo xmlFileInfo)
 		{
+			SourceFilePath = xmlFileInfo.FullName;
+
 			XmlDocument = new();
-			XmlDocument.Load(xmlFileInfo.FullName);
+			XmlDocument.Load(SourceFilePath);
 
 			const string collectionRootNodePath = RekordboxXmlNodes.Collection;
 			m_CollectionRootNode = XmlDocument.DocumentElement.SelectSingleNode(collectionRootNodePath);

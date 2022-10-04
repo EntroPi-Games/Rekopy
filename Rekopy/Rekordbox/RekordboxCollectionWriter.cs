@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Xml;
 
@@ -35,6 +37,10 @@ namespace Rekopy
 
 			int trackCount = trackIds.Count;
 			collectionRootNode.Attributes[RekordboxXmlAttributes.Entries].Value = trackCount.ToString();
+
+			string sourceDirectory = Path.GetDirectoryName(rekordboxCollectionReader.SourceFilePath);
+			string targetDirectory = Path.GetDirectoryName(filePath);
+			CopyTrackFilesAndUpdateNodePaths(collectionRootNode, sourceDirectory, targetDirectory);
 
 			xmlDocument.Save(filePath);
 		}
@@ -81,6 +87,69 @@ namespace Rekopy
 					collectionRootNode.AppendChild(importedTrackNode);
 				}
 			}
+		}
+
+		private static void CopyTrackFilesAndUpdateNodePaths(XmlNode collectionRootNode, string sourceDirectory, string targetDirectory)
+		{
+			const string collectionDirectoryName = "Collection";
+
+			string collectionTargetDirectory = Path.Combine(targetDirectory, collectionDirectoryName);
+			Directory.CreateDirectory(collectionTargetDirectory);
+
+			foreach (XmlNode trackNode in collectionRootNode.SelectNodes(RekordboxXmlNodes.Track))
+			{
+				if (TryGetTrackFilePath(trackNode, sourceDirectory, out string sourceFilePath) && File.Exists(sourceFilePath))
+				{
+					if (Int32.TryParse(trackNode.Attributes[RekordboxXmlAttributes.TrackId].Value, out int trackId))
+					{
+						string filename = Path.GetFileName(sourceFilePath);
+						string trackPrefix = $"{trackId} - ";
+						if (filename.StartsWith(trackPrefix) == false)
+						{
+							filename = $"{trackPrefix}{filename}";
+						}
+
+						string targetFilePath = Path.Combine(collectionTargetDirectory, filename);
+
+						File.Copy(sourceFilePath, targetFilePath, true);
+
+						string relativeFilePath = $"{collectionDirectoryName}/{filename}";
+						SetTrackFilePath(trackNode, relativeFilePath);
+					}
+				}
+			}
+		}
+
+		private static bool TryGetTrackFilePath(XmlNode trackNode, string sourceDirectory, out string trackFilePath)
+		{
+			trackFilePath = trackNode.Attributes[RekordboxXmlAttributes.Location].Value;
+			if (trackFilePath != null)
+			{
+				const string absolutePathPrefix = "file://localhost/";
+				if (trackFilePath.StartsWith(absolutePathPrefix))
+				{
+					trackFilePath = trackFilePath.Substring(absolutePathPrefix.Length);
+					trackFilePath = Uri.UnescapeDataString(trackFilePath);
+				}
+				else
+				{
+					trackFilePath = Path.Combine(sourceDirectory, Uri.UnescapeDataString(trackFilePath));
+				}
+
+				return true;
+			}
+
+			return false;
+		}
+
+		private static void SetTrackFilePath(XmlNode trackNode, string trackFilePath)
+		{
+			if (Uri.IsWellFormedUriString(trackFilePath, UriKind.Relative) == false)
+			{
+				trackFilePath = Uri.EscapeUriString(trackFilePath);
+			}
+
+			trackNode.Attributes[RekordboxXmlAttributes.Location].Value = trackFilePath;
 		}
 	}
 }

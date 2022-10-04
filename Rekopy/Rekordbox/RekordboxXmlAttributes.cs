@@ -8,5 +8,6 @@ namespace Rekopy
 		public const string Key = "Key";
 		public const string Entries = "Entries";
 		public const string Count = "Count";
+		public const string Location = "Location";
 	}
 }
