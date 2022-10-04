@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
@@ -24,18 +23,18 @@ namespace Rekopy
 				djPlaylistsNode.AppendChild(importedChildNode);
 			}
 
-			XmlNode playlistRootNode = djPlaylistsNode.SelectSingleNode("PLAYLISTS");
+			XmlNode playlistRootNode = djPlaylistsNode.SelectSingleNode(RekordboxXmlNodes.Playlists);
 			HashSet<int> trackIds = new();
 
 			ImportPlaylistXmlNode(xmlDocument, rootPlaylist, playlistRootNode, trackIds);
 
-			XmlNode collectionRootNode = djPlaylistsNode.SelectSingleNode("COLLECTION");
+			XmlNode collectionRootNode = djPlaylistsNode.SelectSingleNode(RekordboxXmlNodes.Collection);
 
 			IEnumerable<int> sortedTrackIds = trackIds.OrderBy(id => id);
 			ImportTrackIdNodes(xmlDocument, rekordboxCollectionReader, collectionRootNode, sortedTrackIds);
 
 			int trackCount = trackIds.Count;
-			collectionRootNode.Attributes["Entries"].Value = trackCount.ToString();
+			collectionRootNode.Attributes[RekordboxXmlAttributes.Entries].Value = trackCount.ToString();
 
 			xmlDocument.Save(filePath);
 		}
@@ -68,7 +67,7 @@ namespace Rekopy
 			}
 			else if (playlist.PlaylistType == PlaylistType.Folder)
 			{
-				importedPlaylistNode.Attributes["Count"].Value = includedChildCount.ToString();
+				importedPlaylistNode.Attributes[RekordboxXmlAttributes.Count].Value = includedChildCount.ToString();
 			}
 		}
 

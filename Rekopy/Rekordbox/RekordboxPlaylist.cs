@@ -6,12 +6,10 @@ namespace Rekopy
 {
 	public class RekordboxPlaylist : IPlaylist
 	{
-		private const string NameAttributeKey = "Name";
-
 		private readonly HashSet<RekordboxPlaylist> m_Children = new();
 		private readonly List<int> m_TrackIds = new();
 
-		public string Name => Node != null ? Node.Attributes[NameAttributeKey].Value : string.Empty;
+		public string Name => Node != null ? Node.Attributes[RekordboxXmlAttributes.Name].Value : string.Empty;
 		public IPlaylist Parent { get; }
 		public PlaylistType PlaylistType { get; }
 		public XmlNode Node { get; }
@@ -24,8 +22,7 @@ namespace Rekopy
 			Parent = parent;
 			Node = node;
 
-			const string typeAttributeKey = "Type";
-			if (Int32.TryParse(Node.Attributes[typeAttributeKey].Value, out int typeValue))
+			if (Int32.TryParse(Node.Attributes[RekordboxXmlAttributes.Type].Value, out int typeValue))
 			{
 				PlaylistType = typeValue > 0 ? PlaylistType.Playlist : PlaylistType.Folder;
 			}
@@ -36,10 +33,10 @@ namespace Rekopy
 
 			if (PlaylistType == PlaylistType.Playlist)
 			{
-				XmlNodeList trackNodeList = node.SelectNodes("TRACK");
+				XmlNodeList trackNodeList = node.SelectNodes(RekordboxXmlNodes.Track);
 				foreach (XmlNode trackNode in trackNodeList)
 				{
-					if (Int32.TryParse(trackNode.Attributes["Key"].Value, out int trackId))
+					if (Int32.TryParse(trackNode.Attributes[RekordboxXmlAttributes.Key].Value, out int trackId))
 					{
 						m_TrackIds.Add(trackId);
 					}

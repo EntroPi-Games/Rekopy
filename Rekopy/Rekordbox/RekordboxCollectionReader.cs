@@ -23,24 +23,24 @@ namespace Rekopy
 			XmlDocument = new();
 			XmlDocument.Load(xmlFileInfo.FullName);
 
-			const string collectionRootNodePath = "COLLECTION";
+			const string collectionRootNodePath = RekordboxXmlNodes.Collection;
 			m_CollectionRootNode = XmlDocument.DocumentElement.SelectSingleNode(collectionRootNodePath);
 
-			XmlNodeList trackNodes = m_CollectionRootNode.SelectNodes("TRACK");
+			XmlNodeList trackNodes = m_CollectionRootNode.SelectNodes(RekordboxXmlNodes.Track);
 			foreach (XmlNode trackNode in trackNodes)
 			{
-				if (Int32.TryParse(trackNode.Attributes["TrackID"].Value, out int trackId))
+				if (Int32.TryParse(trackNode.Attributes[RekordboxXmlAttributes.TrackId].Value, out int trackId))
 				{
 					m_TrackNodes.Add(trackId, trackNode);
 				}
 			}
 
-			const string playlistRootNodePath = "PLAYLISTS/NODE";
+			const string playlistRootNodePath = $"{RekordboxXmlNodes.Playlists}/{RekordboxXmlNodes.Node}";
 			m_PlaylistRootNode = XmlDocument.DocumentElement.SelectSingleNode(playlistRootNodePath);
 
 			m_RootPlaylist = new RekordboxPlaylist(null, m_PlaylistRootNode);
 
-			XmlNodeList playlistNodeList = m_PlaylistRootNode.SelectNodes("NODE");
+			XmlNodeList playlistNodeList = m_PlaylistRootNode.SelectNodes(RekordboxXmlNodes.Node);
 			foreach (XmlNode node in playlistNodeList)
 			{
 				AddChildrenToPlaylist(node, m_RootPlaylist);
@@ -54,7 +54,7 @@ namespace Rekopy
 
 			if (node.HasChildNodes == true)
 			{
-				XmlNodeList childNodeList = node.SelectNodes("NODE");
+				XmlNodeList childNodeList = node.SelectNodes(RekordboxXmlNodes.Node);
 				foreach (XmlNode childNode in childNodeList)
 				{
 					AddChildrenToPlaylist(childNode, playlist);
@@ -64,7 +64,7 @@ namespace Rekopy
 
 		public static bool IsFileRekordboxCollection(FileInfo xmlFileInfo)
 		{
-			const string firstElementName = "DJ_PLAYLISTS";
+			const string firstElementName = RekordboxXmlNodes.DjPlaylists;
 			bool isRekordboxCollection = false;
 
 			try
