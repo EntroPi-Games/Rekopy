@@ -9,20 +9,20 @@ namespace Rekopy
 		private const int ExportColumnIndex = 1;
 		private const int PlaylistDataColumnIndex = 2;
 
-		private readonly TreeGridView m_TreeGridView;
+		public TreeGridView TreeGridView { get; }
 
-		public PlaylistView(Panel parentPanel, IPlaylist rootPlaylist)
+		public PlaylistView(IPlaylist rootPlaylist)
 		{
-			m_TreeGridView = new TreeGridView();
+			TreeGridView = new TreeGridView();
 
-			m_TreeGridView.Columns.Add(new GridColumn
+			TreeGridView.Columns.Add(new GridColumn
 			{
 				DataCell = new TextBoxCell(NameColumnIndex),
 				AutoSize = true,
 				MinWidth = 256
 			});
 
-			m_TreeGridView.Columns.Add(new GridColumn
+			TreeGridView.Columns.Add(new GridColumn
 			{
 				HeaderText = "Export",
 				DataCell = new CheckBoxCell(ExportColumnIndex),
@@ -31,12 +31,10 @@ namespace Rekopy
 				MaxWidth = 48
 			});
 
-			m_TreeGridView.CellClick += OnCellClicked;
-			m_TreeGridView.CellDoubleClick += OnCellDoubleClicked;
+			TreeGridView.CellClick += OnCellClicked;
+			TreeGridView.CellDoubleClick += OnCellDoubleClicked;
 
 			SetRootPlaylist(rootPlaylist);
-
-			parentPanel.Content = m_TreeGridView;
 		}
 
 		private void OnCellClicked(object sender, GridCellMouseEventArgs eventArgs)
@@ -58,7 +56,7 @@ namespace Rekopy
 			{
 				TreeGridItem item = eventArgs.Item as TreeGridItem;
 				item.Expanded = !item.Expanded;
-				m_TreeGridView.ReloadData();
+				TreeGridView.ReloadData();
 			}
 		}
 
@@ -75,18 +73,18 @@ namespace Rekopy
 				AddPlaylistAndChildrenToTreeItem(playlist, playlistRootItem);
 			}
 
-			m_TreeGridView.DataStore = itemCollection;
+			TreeGridView.DataStore = itemCollection;
 		}
 
 		private void UpdateView()
 		{
-			TreeGridItemCollection itemCollection = (TreeGridItemCollection)m_TreeGridView.DataStore;
+			TreeGridItemCollection itemCollection = (TreeGridItemCollection)TreeGridView.DataStore;
 			foreach (TreeGridItem item in itemCollection.Cast<TreeGridItem>())
 			{
 				UpdateTreeGridItemRecursively(item);
 			}
 
-			m_TreeGridView.ReloadData();
+			TreeGridView.ReloadData();
 		}
 
 		private static void UpdateTreeGridItemRecursively(TreeGridItem item)

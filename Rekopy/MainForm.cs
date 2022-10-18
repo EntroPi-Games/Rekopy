@@ -61,7 +61,9 @@ namespace Rekopy
 				if (RekordboxCollectionReader.IsFileRekordboxCollection(fileInfo) == true)
 				{
 					m_RekordboxCollectionReader = new RekordboxCollectionReader(fileInfo);
-					PlaylistView view = new(this, m_RekordboxCollectionReader.RootPlaylist);
+
+					PlaylistView view = new(m_RekordboxCollectionReader.RootPlaylist);
+					Content = view.TreeGridView;
 				}
 			}
 		}
