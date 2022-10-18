@@ -129,7 +129,10 @@ namespace Rekopy
 
 						string targetFilePath = Path.Combine(collectionTargetDirectory, filename);
 
-						File.Copy(sourceFilePath, targetFilePath, true);
+						if (File.Exists(targetFilePath) == false)
+						{
+							File.Copy(sourceFilePath, targetFilePath);
+						}
 
 						string relativeFilePath = $"{collectionDirectoryName}/{filename}";
 						SetTrackFilePath(trackNode, relativeFilePath);
