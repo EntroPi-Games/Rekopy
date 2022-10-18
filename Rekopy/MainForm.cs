@@ -1,6 +1,7 @@
 using Eto.Forms;
 using Eto.Drawing;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Rekopy
 {
@@ -78,7 +79,10 @@ namespace Rekopy
 
 					if (saveFileDialog.ShowDialog(this) == DialogResult.Ok)
 					{
-						RekordboxCollectionWriter.WriteToFile(saveFileDialog.FileName, m_RekordboxCollectionReader, m_RekordboxCollectionReader.RootPlaylist);
+						ProgressDialog progressDialog = new(256);
+						progressDialog.ShowModalAsync(this);
+
+						Task _ = RekordboxCollectionWriter.WriteToFileAsync(saveFileDialog.FileName, m_RekordboxCollectionReader, m_RekordboxCollectionReader.RootPlaylist, progressDialog.Data);
 					}
 				}
 				else

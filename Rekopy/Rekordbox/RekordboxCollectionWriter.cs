@@ -2,13 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Xml;
 
 namespace Rekopy
 {
 	public static class RekordboxCollectionWriter
 	{
-		public static void WriteToFile(string filePath, RekordboxCollectionReader rekordboxCollectionReader, IPlaylist rootPlaylist)
+		public static async Task WriteToFileAsync(string filePath, RekordboxCollectionReader rekordboxCollectionReader, IPlaylist rootPlaylist, ProgressData progressData)
+		{
+			await Task.Run(() => WriteToFile(filePath, rekordboxCollectionReader, rootPlaylist, progressData));
+
+			progressData.CompleteProgress();
+		}
+
+		private static void WriteToFile(string filePath, RekordboxCollectionReader rekordboxCollectionReader, IPlaylist rootPlaylist, ProgressData progressData)
 		{
 			XmlDocument xmlDocument = new();
 			XmlDocument readerDocument = rekordboxCollectionReader.XmlDocument;
@@ -30,17 +38,21 @@ namespace Rekopy
 
 			ImportPlaylistXmlNode(xmlDocument, rootPlaylist, playlistRootNode, trackIds);
 
+			progressData.Progress += 0.05f;
+
 			XmlNode collectionRootNode = djPlaylistsNode.SelectSingleNode(RekordboxXmlNodes.Collection);
 
 			IEnumerable<int> sortedTrackIds = trackIds.OrderBy(id => id);
 			ImportTrackIdNodes(xmlDocument, rekordboxCollectionReader, collectionRootNode, sortedTrackIds);
+
+			progressData.Progress += 0.05f;
 
 			int trackCount = trackIds.Count;
 			collectionRootNode.Attributes[RekordboxXmlAttributes.Entries].Value = trackCount.ToString();
 
 			string sourceDirectory = Path.GetDirectoryName(rekordboxCollectionReader.SourceFilePath);
 			string targetDirectory = Path.GetDirectoryName(filePath);
-			CopyTrackFilesAndUpdateNodePaths(collectionRootNode, sourceDirectory, targetDirectory);
+			CopyTrackFilesAndUpdateNodePaths(collectionRootNode, sourceDirectory, targetDirectory, progressData);
 
 			xmlDocument.Save(filePath);
 		}
@@ -89,15 +101,21 @@ namespace Rekopy
 			}
 		}
 
-		private static void CopyTrackFilesAndUpdateNodePaths(XmlNode collectionRootNode, string sourceDirectory, string targetDirectory)
+		private static void CopyTrackFilesAndUpdateNodePaths(XmlNode collectionRootNode, string sourceDirectory, string targetDirectory, ProgressData progressData)
 		{
 			const string collectionDirectoryName = "Collection";
 
 			string collectionTargetDirectory = Path.Combine(targetDirectory, collectionDirectoryName);
 			Directory.CreateDirectory(collectionTargetDirectory);
 
-			foreach (XmlNode trackNode in collectionRootNode.SelectNodes(RekordboxXmlNodes.Track))
+			XmlNodeList trackNodes = collectionRootNode.SelectNodes(RekordboxXmlNodes.Track);
+
+			float progressIncrement = progressData.RemainingProgress / trackNodes.Count;
+
+			for (int i = 0; i < trackNodes.Count; ++i)
 			{
+				XmlNode trackNode = trackNodes[i];
+
 				if (TryGetTrackFilePath(trackNode, sourceDirectory, out string sourceFilePath) && File.Exists(sourceFilePath))
 				{
 					if (Int32.TryParse(trackNode.Attributes[RekordboxXmlAttributes.TrackId].Value, out int trackId))
@@ -117,6 +135,8 @@ namespace Rekopy
 						SetTrackFilePath(trackNode, relativeFilePath);
 					}
 				}
+
+				progressData.Progress += progressIncrement;
 			}
 		}
 
