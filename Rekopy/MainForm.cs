@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -61,10 +62,17 @@ namespace Rekopy
 				FileInfo fileInfo = new(openFileDialog.FileName);
 				if (RekordboxCollectionReader.IsFileRekordboxCollection(fileInfo) == true)
 				{
-					m_RekordboxCollectionReader = new RekordboxCollectionReader(fileInfo);
+					try
+					{
+						m_RekordboxCollectionReader = new RekordboxCollectionReader(fileInfo);
 
-					PlaylistView view = new(m_RekordboxCollectionReader.RootPlaylist);
-					Content = view.TreeGridView;
+						PlaylistView view = new(m_RekordboxCollectionReader.RootPlaylist);
+						Content = view.TreeGridView;
+					}
+					catch (Exception exception)
+					{
+						MessageBox.Show(exception.Message, "Error Opening Collection", MessageBoxType.Error);
+					}
 				}
 			}
 		}

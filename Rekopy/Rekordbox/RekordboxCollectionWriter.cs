@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using Eto.Forms;
 
 namespace Rekopy
 {
@@ -12,7 +13,14 @@ namespace Rekopy
 	{
 		public static async Task WriteToFileAsync(string filePath, RekordboxCollectionReader rekordboxCollectionReader, IPlaylist rootPlaylist, ProgressData progressData, CancellationToken cancellationToken)
 		{
-			await Task.Run(() => WriteToFile(filePath, rekordboxCollectionReader, rootPlaylist, progressData, cancellationToken));
+			try
+			{
+				await Task.Run(() => WriteToFile(filePath, rekordboxCollectionReader, rootPlaylist, progressData, cancellationToken));
+			}
+			catch (Exception exception)
+			{
+				MessageBox.Show(exception.Message, "Failed to Export Selected Playlist(s)", MessageBoxType.Error);
+			}
 
 			progressData.CompleteProgress();
 		}
