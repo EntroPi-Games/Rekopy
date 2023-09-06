@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -9,14 +10,14 @@ namespace Rekopy
 {
 	public static class RekordboxCollectionWriter
 	{
-		public static async Task WriteToFileAsync(string filePath, RekordboxCollectionReader rekordboxCollectionReader, IPlaylist rootPlaylist, ProgressData progressData)
+		public static async Task WriteToFileAsync(string filePath, RekordboxCollectionReader rekordboxCollectionReader, IPlaylist rootPlaylist, ProgressData progressData, CancellationToken cancellationToken)
 		{
-			await Task.Run(() => WriteToFile(filePath, rekordboxCollectionReader, rootPlaylist, progressData));
+			await Task.Run(() => WriteToFile(filePath, rekordboxCollectionReader, rootPlaylist, progressData, cancellationToken));
 
 			progressData.CompleteProgress();
 		}
 
-		private static void WriteToFile(string filePath, RekordboxCollectionReader rekordboxCollectionReader, IPlaylist rootPlaylist, ProgressData progressData)
+		private static void WriteToFile(string filePath, RekordboxCollectionReader rekordboxCollectionReader, IPlaylist rootPlaylist, ProgressData progressData, CancellationToken cancellationToken)
 		{
 			XmlDocument xmlDocument = new();
 			XmlDocument readerDocument = rekordboxCollectionReader.XmlDocument;
@@ -52,7 +53,7 @@ namespace Rekopy
 
 			string sourceDirectory = Path.GetDirectoryName(rekordboxCollectionReader.SourceFilePath);
 			string targetDirectory = Path.GetDirectoryName(filePath);
-			CopyTrackFilesAndUpdateNodePaths(collectionRootNode, sourceDirectory, targetDirectory, progressData);
+			CopyTrackFilesAndUpdateNodePaths(collectionRootNode, sourceDirectory, targetDirectory, progressData, cancellationToken);
 
 			xmlDocument.Save(filePath);
 		}
@@ -101,7 +102,7 @@ namespace Rekopy
 			}
 		}
 
-		private static void CopyTrackFilesAndUpdateNodePaths(XmlNode collectionRootNode, string sourceDirectory, string targetDirectory, ProgressData progressData)
+		private static void CopyTrackFilesAndUpdateNodePaths(XmlNode collectionRootNode, string sourceDirectory, string targetDirectory, ProgressData progressData, CancellationToken cancellationToken)
 		{
 			const string collectionDirectoryName = "Collection";
 
@@ -140,6 +141,11 @@ namespace Rekopy
 				}
 
 				progressData.Progress += progressIncrement;
+
+				if (cancellationToken.IsCancellationRequested)
+				{
+					break;
+				}
 			}
 		}
 

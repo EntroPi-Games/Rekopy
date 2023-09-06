@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Threading;
 using Eto.Forms;
 
 namespace Rekopy
@@ -22,11 +23,13 @@ namespace Rekopy
 	{
 		public ProgressData Data { get; }
 
+		private readonly CancellationTokenSource m_CancellationTokenSource;
 		private readonly ProgressBar m_ProgressBar;
 		private readonly UITimer m_Timer;
 
-		public ProgressDialog(int width)
+		public ProgressDialog(int width, CancellationTokenSource cancellationTokenSource)
 		{
+			m_CancellationTokenSource = cancellationTokenSource;
 			Data = new ProgressData();
 
 			m_ProgressBar = new ProgressBar { MaxValue = width, Width = width };
@@ -53,8 +56,7 @@ namespace Rekopy
 
 		private void OnClosing(object sender, CancelEventArgs eventArgs)
 		{
-			// Prevent users from closing the progress dialog before it is complete.
-			eventArgs.Cancel = Data.IsProgressComplete == false;
+			m_CancellationTokenSource.Cancel();
 		}
 
 		private void OnClosed(object sender, EventArgs eventArgs)
