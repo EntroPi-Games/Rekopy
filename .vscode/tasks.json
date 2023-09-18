@@ -35,7 +35,11 @@
 				"publish",
 				"${workspaceFolder}/Rekopy.Wpf/Rekopy.Wpf.csproj",
 				"/property:GenerateFullPaths=true",
-				"/consoleloggerparameters:NoSummary"
+				"/consoleloggerparameters:NoSummary",
+				"-c",
+				"Release",
+				"/p:DebugType=None",
+				"/p:DebugSymbols=false"
 			],
 			"problemMatcher": "$msCompile"
 		},
